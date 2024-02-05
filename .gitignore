@@ -1,0 +1,63 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Project-specific output
+/bin/
+/pkg/
+
+# Dependency directories (remove the `#` if using dependency management tools like `go mod`)
+#/vendor/
+
+# Editor files and directories
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+*.bak
+*.orig
+*~
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Go specific
+*.a
+*.o
+
+# Compiled Object files, Static and Dynamic libs (Shared Objects)
+*.cgo1.go
+*.cgo2.c
+_cgo_defun.c
+_cgo_gotypes.go
+_cgo_export.*
+
+# Dependency directories (remove the '#' if the project uses /vendor)
+#vendor/
+
+# Eclipse metadata
+.metadata
+
+# IntelliJ project files
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The directory `.cache` contains temporary files that builders create
+.cache/
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
