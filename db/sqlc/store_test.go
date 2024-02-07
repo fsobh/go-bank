@@ -44,7 +44,7 @@ func TestTransferTx(t *testing.T) {
 	//after routines are done, check the results and errors
 	for i := 0; i < n; i++ {
 
-		err := <-errs // store errors in a varibale in this main routine
+		err := <-errs // store errors in a variable in this main routine
 
 		require.NoError(t, err)
 
@@ -89,6 +89,27 @@ func TestTransferTx(t *testing.T) {
 		require.NoError(t, err)
 
 		//todo : check accounts
+
+		fromAccount := result.FromAccount
+		require.NotEmpty(t, fromAccount)
+		require.Equal(t, account1.ID, fromAccount.ID)
+
+		toAccount := result.ToAccount
+		require.NotEmpty(t, toAccount)
+		require.Equal(t, account2.ID, toAccount.ID)
+
+		// todo : check account balances
+
+		diff1 := account1.Balance - fromAccount.Balance //how much is being transferred out of account 1
+		diff2 := toAccount.Balance - account2.Balance   //how much money is being received into account 2
+
+		require.Equal(t, diff1, diff2)
+		require.True(t, diff1 > 0) // should be a positive number
+		require.True(t, diff1%amount == 0)
+		// Since its 5 concurrent transfers of amount:= 10
+		//100 - 10 = 90  ---> 90 % 10 = 0
+		//90 -  10 = 80  ---> 80 % 10 = 0
+		//80 - 10 = 70   ---> 70 % 10 = 0
 
 	}
 }
