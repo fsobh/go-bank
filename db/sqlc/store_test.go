@@ -25,8 +25,9 @@ func TestTransferTx(t *testing.T) {
 	results := make(chan TransferTxResult) // create a channel to recieve Tx result data from the below routine
 
 	for i := 0; i < n; i++ {
+		//txName := fmt.Sprintf("tx %d", i+1) //for fmt.logs
 		go func() { // run each transfer in its own routine
-
+			//ctx := context.WithValue(context.Background(), txKey, txName) //for fmt.logs
 			result, err := store.TransferTx(context.Background(), TransferTxParams{
 
 				FromAccountID: account1.ID,
@@ -40,7 +41,7 @@ func TestTransferTx(t *testing.T) {
 		}()
 	}
 
-	//existed := make(map[int]bool)
+	existed := make(map[int]bool)
 	//after routines are done, check the results and errors
 	for i := 0; i < n; i++ {
 
@@ -100,16 +101,40 @@ func TestTransferTx(t *testing.T) {
 
 		// todo : check account balances
 
-		diff1 := account1.Balance - fromAccount.Balance //how much is being transferred out of account 1
-		diff2 := toAccount.Balance - account2.Balance   //how much money is being received into account 2
+		// Since its 5 concurrent transfers of amount:= 10
+		fmt.Println(">> tx:", fromAccount.Balance, toAccount.Balance)
+		diff1 := account1.Balance - fromAccount.Balance // *diff1* (initial account balance) - (final account balance)
+		//100 - 90 = 10
+		//90  - 80 = 20
+		//80  - 70 = 30
+		//...
+
+		diff2 := toAccount.Balance - account2.Balance // *diff2* (final account balance) - (initial account balance)
+		//60 - 50 = 10
+		//70 - 50 = 20
+		//80 - 50 = 30
+		//...
 
 		require.Equal(t, diff1, diff2)
-		require.True(t, diff1 > 0) // should be a positive number
-		require.True(t, diff1%amount == 0)
-		// Since its 5 concurrent transfers of amount:= 10
-		//100 - 10 = 90  ---> 90 % 10 = 0
-		//90 -  10 = 80  ---> 80 % 10 = 0
-		//80 - 10 = 70   ---> 70 % 10 = 0
+		require.True(t, diff1 > 0)         // should be a positive number
+		require.True(t, diff1%amount == 0) // n % n always = 0
+
+		k := int(diff1 / amount)          // 10/10=1, 20/10=2, 30/10=3...50/10=5 (n=5)
+		require.True(t, k >= 1 && k <= n) // so k will always be between 1 & 5
+		require.NotContains(t, existed, k)
+		existed[k] = true
 
 	}
+	// Check the final updated balances
+
+	updatedAccount1, err := testQueries.GetAccount(context.Background(), account1.ID)
+	require.NoError(t, err)
+
+	updatedAccount2, err := testQueries.GetAccount(context.Background(), account2.ID)
+	require.NoError(t, err)
+
+	fmt.Println(">> after", updatedAccount1.Balance, updatedAccount2.Balance)
+	require.Equal(t, account1.Balance-int64(n)*amount, updatedAccount1.Balance)
+	require.Equal(t, account2.Balance+int64(n)*amount, updatedAccount2.Balance)
+
 }
