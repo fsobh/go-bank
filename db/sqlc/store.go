@@ -108,8 +108,11 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 		}
 
 		// TODO: Update accounts balances (handle Deadlock)
-		//Old way
+
+		//Old way (before deadlock handling and addAccountBalance query function), deadlock occurred on get account(for balance)
+
 		//// Account 1
+
 		////fmt.Println(txName, "Get account 1")
 		//account1, err := q.GetAccountForUpdate(ctx, arg.FromAccountID)
 		//if err != nil {
@@ -120,6 +123,7 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 		//	ID:      arg.FromAccountID,
 		//	Balance: account1.Balance - arg.Amount,
 		//})
+
 		//// Account 2
 		////fmt.Println(txName, "Get account 2")
 		//account2, err := q.GetAccountForUpdate(ctx, arg.ToAccountID)
@@ -131,19 +135,86 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 		//	ID:      arg.ToAccountID,
 		//	Balance: account2.Balance + arg.Amount,
 		//})
-		result.FromAccount, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
-			ID:     arg.FromAccountID,
-			Amount: -arg.Amount,
-		})
-		result.ToAccount, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
-			ID:     arg.ToAccountID,
-			Amount: arg.Amount,
-		})
-		if err != nil {
-			return err
+
+		// This will also cause deadlock if were transferring acct1 --> acct2 and acct2 --> acct1 concurrently in routines
+		//result.FromAccount, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
+		//	ID:     arg.FromAccountID,
+		//	Amount: -arg.Amount,
+		//})
+		//result.ToAccount, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
+		//	ID:     arg.ToAccountID,
+		//	Amount: arg.Amount,
+		//})
+
+		//to avoid deadlock, we do all updates for each seperately
+
+		//Reason :
+
+		/*
+			Account 1 --> Account 2 Transfer
+			-W = UPDATE accounts SET balance = balance + 10 WHERE id = 1 RETURNING *;
+			-X = UPDATE accounts SET balance = balance - 10 WHERE id = 2 RETURNING *;
+
+		*/
+
+		/* Account 2 --> Account 1 Transfer
+
+		-Y = UPDATE accounts SET balance = balance - 10 WHERE id = 2 RETURNING *;
+		-Z = UPDATE accounts SET balance = balance + 10 WHERE id = 1 RETURNING *;
+
+		-W locks Account 1 row
+		-Y locks Account 2 row
+		-X needs Account 2 row, but it's locked by Y
+		-Z needs Account 2 row, but it's locked by X
+
+		So we handle each senders list of transactions at once, all transfers of acct 1 --> acct2 THEN all transfers from account2 --> account1
+		*/
+
+		if arg.FromAccountID < arg.ToAccountID {
+
+			result.FromAccount, result.ToAccount, err = addMoney(ctx, q, arg.FromAccountID, -arg.Amount, arg.ToAccountID, arg.Amount)
+
+			if err != nil {
+				return err
+			}
+
+		} else {
+
+			result.ToAccount, result.FromAccount, err = addMoney(ctx, q, arg.ToAccountID, arg.Amount, arg.FromAccountID, -arg.Amount)
+
+			if err != nil {
+				return err
+			}
 		}
+
 		return nil
 	})
 
 	return result, err
+}
+
+func addMoney(
+	ctx context.Context,
+	q *Queries,
+	accountID1 int64,
+	amount1 int64,
+	accountID2 int64,
+	amount2 int64,
+) (account1 Account, account2 Account, err error) {
+
+	account1, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
+		ID:     accountID1,
+		Amount: amount1,
+	})
+
+	if err != nil {
+		return
+	}
+
+	account2, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
+		ID:     accountID2,
+		Amount: amount2,
+	})
+
+	return
 }
