@@ -37,6 +37,8 @@ sqlc:
 test:
 	go test -v -coverprofile=testCoverage.out ./...
 	go tool cover -html=testCoverage.out
+server:
+	go run main.go
 
 
-.PHONY: createpostgres createdb dropdb stoppostgres runpostgres deletepostgres createmigrate migrateup migratedown sqlc test
+.PHONY: createpostgres createdb dropdb stoppostgres runpostgres deletepostgres createmigrate migrateup migratedown sqlc test server
