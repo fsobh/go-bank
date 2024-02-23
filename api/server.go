@@ -19,7 +19,10 @@ func NewServer(store *db.Store) *Server {
 
 	//add routes to router
 
-	router.POST("/accounts", server.createAccount) // defined in account.go
+	// defined in account.go
+	router.POST("/accounts", server.createAccount) // POST
+	router.GET("/accounts/:id", server.getAccount) // GET id is a URL params
+	router.GET("/accounts", server.listAccount)    // this implements pagination for fetching all accounts in a range
 
 	server.router = router
 	return server
