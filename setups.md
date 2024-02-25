@@ -41,3 +41,6 @@ for postgres : https://docs.sqlc.dev/en/latest/index.html || https://docs.sqlc.d
     run `docker run --rm -v "%cd%:/src" -w /src kjconroy/sqlc init` USING CMD on WINDOWS to generate the YAML file
 
 for other stuff : https://pkg.go.dev/github.com/jmoiron/sqlx
+
+NOTE : ALL GO ENV'S USE A / AND NOT A \ AS PATH SEPERATOR
+like GOBIN
