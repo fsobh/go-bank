@@ -7,12 +7,12 @@ import (
 
 // Server define http server here 1.
 type Server struct {
-	store  *db.Store
+	store  db.Store // this used to be a pointer. we removed it after creating the querier.go interface for mocking the DB. Interfaces cannot be pointers
 	router *gin.Engine
 }
 
 // NewServer Creates a new HTTP server instance and setup routing 2.
-func NewServer(store *db.Store) *Server {
+func NewServer(store db.Store) *Server {
 
 	server := &Server{store: store}
 	router := gin.Default()
