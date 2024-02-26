@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	mockdb "github.com/fsobh/simplebank/db/mock"
@@ -19,38 +20,82 @@ func TestGetAccountAPI(t *testing.T) {
 
 	account := randomAccount()
 
-	ctrl := gomock.NewController(t) // create a new Mock Controller
+	//Creating a table driven test set here to get 100% coverage (don't account for happy scenario only)
+	testCases := []struct {
+		name          string
+		accountID     int64
+		buildStubs    func(store *mockdb.MockStore)
+		checkResponse func(t *testing.T, recorder *httptest.ResponseRecorder)
+	}{
+		{
+			name:      "OK",
+			accountID: account.ID,
+			buildStubs: func(store *mockdb.MockStore) {
 
-	defer ctrl.Finish() // very important. It makes sure all functions that were expected to be called were called
+				// I expect  the get account method to be called with any Context and the specified ID argument, called only once, expected to return the random account we made with nil error
+				store.EXPECT().GetAccount(gomock.Any(), gomock.Eq(account.ID)).Times(1).Return(db.Account{}, sql.ErrNoRows)
 
-	store := mockdb.NewMockStore(ctrl) // create new Mock store
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				//check response code
+				require.Equal(t, http.StatusNotFound, recorder.Code)
 
-	//build stubs :
+			},
+		},
+		{
+			name:      "NotFound",
+			accountID: account.ID,
+			buildStubs: func(store *mockdb.MockStore) {
 
-	// I expect  the get account method to be called with any Context and the specified ID argument, called only once, expected to return the random account we made with nil error
-	store.EXPECT().GetAccount(gomock.Any(), gomock.Eq(account.ID)).Times(1).Return(account, nil)
+				// I expect  the get account method to be called with any Context and the specified ID argument, called only once, expected to return the random account we made with nil error
+				store.EXPECT().GetAccount(gomock.Any(), gomock.Eq(account.ID)).Times(1).Return(account, nil)
 
-	//Decalre and initialize a New test server
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				//check response code
+				require.Equal(t, http.StatusOK, recorder.Code)
 
-	server := NewServer(store)
-	//instead of starting up a real http server, we use the recorder feature of the HTTP package
-	recorder := httptest.NewRecorder()
+				//check the response body
+				requireBodyMatchAccount(t, recorder.Body, account)
+			},
+		},
+		//TODO: Write test cases for internal server error and bad request
+	}
 
-	//specify the path of the API we want to call
-	url := fmt.Sprintf("/accounts/%d", account.ID)
+	for i := range testCases {
 
-	request, err := http.NewRequest(http.MethodGet, url, nil)
+		tc := testCases[i]
 
-	require.NoError(t, err)
+		t.Run(tc.name, func(t *testing.T) {
 
-	// This will send our API request through the router and will store the response in the recorder
-	server.router.ServeHTTP(recorder, request)
+			ctrl := gomock.NewController(t) // create a new Mock Controller
 
-	//check response code
-	require.Equal(t, http.StatusOK, recorder.Code)
+			defer ctrl.Finish() // very important. It makes sure all functions that were expected to be called were called
 
-	//check the response body
-	requireBodyMatchAccount(t, recorder.Body, account)
+			store := mockdb.NewMockStore(ctrl) // create new Mock store
+
+			//build stubs :
+			tc.buildStubs(store)
+
+			//Decalre and initialize a New test server
+
+			server := NewServer(store)
+			//instead of starting up a real http server, we use the recorder feature of the HTTP package
+			recorder := httptest.NewRecorder()
+
+			//specify the path of the API we want to call
+			url := fmt.Sprintf("/accounts/%d", account.ID)
+
+			request, err := http.NewRequest(http.MethodGet, url, nil)
+
+			require.NoError(t, err)
+
+			// This will send our API request through the router and will store the response in the recorder
+			server.router.ServeHTTP(recorder, request)
+			tc.checkResponse(t, recorder)
+		})
+
+	}
 
 }
 
