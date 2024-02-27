@@ -33,21 +33,6 @@ func TestGetAccountAPI(t *testing.T) {
 			buildStubs: func(store *mockdb.MockStore) {
 
 				// I expect  the get account method to be called with any Context and the specified ID argument, called only once, expected to return the random account we made with nil error
-				store.EXPECT().GetAccount(gomock.Any(), gomock.Eq(account.ID)).Times(1).Return(db.Account{}, sql.ErrNoRows)
-
-			},
-			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-				//check response code
-				require.Equal(t, http.StatusNotFound, recorder.Code)
-
-			},
-		},
-		{
-			name:      "NotFound",
-			accountID: account.ID,
-			buildStubs: func(store *mockdb.MockStore) {
-
-				// I expect  the get account method to be called with any Context and the specified ID argument, called only once, expected to return the random account we made with nil error
 				store.EXPECT().GetAccount(gomock.Any(), gomock.Eq(account.ID)).Times(1).Return(account, nil)
 
 			},
@@ -57,9 +42,50 @@ func TestGetAccountAPI(t *testing.T) {
 
 				//check the response body
 				requireBodyMatchAccount(t, recorder.Body, account)
+
 			},
 		},
-		//TODO: Write test cases for internal server error and bad request
+		{
+			name:      "NotFound",
+			accountID: account.ID,
+			buildStubs: func(store *mockdb.MockStore) {
+
+				store.EXPECT().GetAccount(gomock.Any(), gomock.Eq(account.ID)).Times(1).Return(db.Account{}, sql.ErrNoRows)
+
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+
+				//check response code
+				require.Equal(t, http.StatusNotFound, recorder.Code)
+
+			},
+		},
+		{
+			name:      "InternalError",
+			accountID: account.ID,
+			buildStubs: func(store *mockdb.MockStore) {
+
+				store.EXPECT().GetAccount(gomock.Any(), gomock.Eq(account.ID)).Times(1).Return(db.Account{}, sql.ErrConnDone)
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+
+				require.Equal(t, http.StatusInternalServerError, recorder.Code)
+
+			},
+		},
+		{
+			name:      "InvalidID",
+			accountID: 0,
+			buildStubs: func(store *mockdb.MockStore) {
+
+				store.EXPECT().GetAccount(gomock.Any(), gomock.Any()).Times(0)
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+
+				require.Equal(t, http.StatusBadRequest, recorder.Code)
+
+			},
+		},
 	}
 
 	for i := range testCases {
@@ -84,7 +110,7 @@ func TestGetAccountAPI(t *testing.T) {
 			recorder := httptest.NewRecorder()
 
 			//specify the path of the API we want to call
-			url := fmt.Sprintf("/accounts/%d", account.ID)
+			url := fmt.Sprintf("/accounts/%d", tc.accountID)
 
 			request, err := http.NewRequest(http.MethodGet, url, nil)
 
