@@ -9,10 +9,11 @@ import (
 
 // binding:"required" is used for validation. Gin offers a validator to validate incoming data
 // oneof=USD EUR is also used for validation. Tells gin that the value has to be one of the listed
+// NOTE : The above was replaced using a custom validator that we created for currency validation (check server.go, currency.go, and validator.go)
 // 3
 type createAccountRequest struct {
 	Owner    string `json:"owner" binding:"required"`
-	Currency string `json:"currency" binding:"required,oneof=USD EUR"`
+	Currency string `json:"currency" binding:"required,currency"`
 }
 
 // Note : Every handler function in Gin takes in a Context object as an argument 4

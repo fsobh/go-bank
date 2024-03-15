@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 )
+
 const alphabet = "abcdefghijklmnopqrstuvwxyz"
 
 func init() {
@@ -13,14 +14,15 @@ func init() {
 
 // Random int between min and max
 func RandomInt(min, max int64) int64 {
-	return min + rand.Int63n(max - min + 1)
+	return min + rand.Int63n(max-min+1)
 }
+
 // Random string of n chars
 func RandomString(n int64) string {
 	var sb strings.Builder
 	k := len(alphabet)
 
-	for i:=0 ; i < k ; i++ {
+	for i := 0; i < k; i++ {
 		c := alphabet[rand.Intn(k)]
 		sb.WriteByte(c)
 	}
@@ -36,7 +38,7 @@ func RandomMoney() int64 {
 	return RandomInt(0, 1000)
 }
 func RandomCurrency() string {
-	currencies:= []string{"USD","EUR","CAD"}
+	currencies := []string{USD, EUR, CAD, LBP, DLBP}
 
 	n := len(currencies)
 
