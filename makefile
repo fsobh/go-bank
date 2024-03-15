@@ -28,8 +28,14 @@ createmigrate:
 migrateup:
 	migrate -path db/migration -database "postgresql://$(USER):$(PASSWORD)@localhost:$(PORT)/$(DB_NAME)?sslmode=disable" -verbose up
 
+migrateup1:
+	migrate -path db/migration -database "postgresql://$(USER):$(PASSWORD)@localhost:$(PORT)/$(DB_NAME)?sslmode=disable" -verbose up 1
+
 migratedown:
 	migrate -path db/migration -database "postgresql://$(USER):$(PASSWORD)@localhost:$(PORT)/$(DB_NAME)?sslmode=disable" -verbose down
+
+migratedown1:
+	migrate -path db/migration -database "postgresql://$(USER):$(PASSWORD)@localhost:$(PORT)/$(DB_NAME)?sslmode=disable" -verbose down 1
 
 sqlc:
 	docker run --rm -v $(PWD):/src -w /src kjconroy/sqlc generate
@@ -45,4 +51,4 @@ mockdb:
 
 
 
-.PHONY: createpostgres createdb dropdb stoppostgres runpostgres deletepostgres createmigrate migrateup migratedown sqlc test server mockdb
+.PHONY: createpostgres createdb dropdb stoppostgres runpostgres deletepostgres createmigrate migrateup migratedown sqlc test server mockdb migratedown1 migrateup1
