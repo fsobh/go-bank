@@ -26,8 +26,9 @@ func NewServer(store db.Store) *Server {
 		v.RegisterValidation("currency", validCurrency)
 	}
 
-	//add routes to router
+	router.POST("/users", server.createUser) // POST
 
+	//add routes to router
 	// defined in account.go
 	router.POST("/accounts", server.createAccount) // POST
 	router.GET("/accounts/:id", server.getAccount) // GET id is a URL params
