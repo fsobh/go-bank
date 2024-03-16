@@ -10,7 +10,7 @@ import (
 const alphabet = "abcdefghijklmnopqrstuvwxyz"
 
 func init() {
-	rand.Seed(time.Now().UnixNano())
+	rand.NewSource(time.Now().UnixNano())
 }
 
 // Random int between min and max
@@ -30,7 +30,6 @@ func RandomString(n int64) string {
 
 	return sb.String()
 }
-
 func RandomOwner() string {
 	return RandomString(6)
 }
