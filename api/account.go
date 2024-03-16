@@ -2,8 +2,11 @@ package api
 
 import (
 	"database/sql"
+	"errors"
+	"fmt"
 	db "github.com/fsobh/simplebank/db/sqlc"
 	"github.com/gin-gonic/gin"
+	"github.com/lib/pq"
 	"net/http"
 )
 
@@ -40,6 +43,11 @@ func (server *Server) createAccount(ctx *gin.Context) {
 
 	// make sure there's no errors
 	if err != nil {
+		// try to convert it to pq error (to handle violation of foreign key constraints)
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) {
+			fmt.Println(pqErr.Code.Name())
+		}
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
