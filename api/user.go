@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
 	"net/http"
+	"time"
 )
 
 // These are provided by the default validator package :
@@ -18,6 +19,14 @@ type createUserRequest struct {
 	Password string `json:"password" binding:"required,min=6"`
 	FullName string `json:"full_name" binding:"required"`
 	Email    string `json:"email" binding:"required,email"`
+}
+
+type CreateUserResponse struct {
+	Username         string    `json:"username"`
+	FullName         string    `json:"full_name"`
+	Email            string    `json:"email"`
+	PasswordChangeAt time.Time `json:"password_change_at"`
+	CreatedAt        time.Time `json:"created_at"`
 }
 
 func (server *Server) createUser(ctx *gin.Context) {
@@ -64,7 +73,13 @@ func (server *Server) createUser(ctx *gin.Context) {
 		return
 	}
 
-	// return 200 status and the new user that was created
-	ctx.JSON(http.StatusOK, user)
+	rsp := CreateUserResponse{
+		Username:         user.Username,
+		FullName:         user.FullName,
+		Email:            user.Email,
+		PasswordChangeAt: user.PasswordChangeAt,
+		CreatedAt:        user.CreatedAt,
+	}
+	ctx.JSON(http.StatusOK, rsp)
 
 }
