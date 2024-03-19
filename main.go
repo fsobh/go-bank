@@ -30,8 +30,10 @@ func main() {
 	//Declare and initialize a new database store instance by passing in the connection instance to the database
 	store := db.NewStore(conn)
 	//Declare and initialize an instance of our server by passing in the database store instance
-	server := api.NewServer(store)
-
+	server, err := api.NewServer(config, store)
+	if err != nil {
+		log.Fatal("Cannot start server")
+	}
 	err = server.Start(config.ServerAddress)
 
 	if err != nil {
