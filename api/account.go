@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	db "github.com/fsobh/simplebank/db/sqlc"
+	"github.com/fsobh/simplebank/token"
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
 	"net/http"
@@ -14,7 +15,6 @@ import (
 // NOTE : The above was replaced using a custom validator that we created for currency validation (check server.go, currency.go, and validator.go)
 // 3
 type createAccountRequest struct {
-	Owner    string `json:"owner" binding:"required"`
 	Currency string `json:"currency" binding:"required,currency"`
 }
 
@@ -30,9 +30,12 @@ func (server *Server) createAccount(ctx *gin.Context) {
 		return
 	}
 
+	//get the username from the header token
+	authorizedPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+
 	//we declare our database arguments and plug the request params to it
 	arg := db.CreateAccountParams{
-		Owner:    req.Owner,
+		Owner:    authorizedPayload.Username,
 		Currency: req.Currency,
 		Balance:  0,
 	}
@@ -84,6 +87,11 @@ func (server *Server) getAccount(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
+	authorizedPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+
+	if account.Owner != authorizedPayload.Username {
+		ctx.JSON(http.StatusUnauthorized, errorResponse(errors.New("unauthorized")))
+	}
 	ctx.JSON(http.StatusOK, account)
 }
 
@@ -102,7 +110,10 @@ func (server *Server) listAccount(ctx *gin.Context) {
 		return
 	}
 
+	authorizedPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+
 	arg := db.ListAccountsParams{
+		Owner:  authorizedPayload.Username,
 		Limit:  req.PageSize,
 		Offset: (req.PageID - 1) * req.PageSize,
 	}
