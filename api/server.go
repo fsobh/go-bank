@@ -54,13 +54,15 @@ func (server *Server) setupRouter() {
 	router.POST("/users", server.createUser)
 	router.POST("/users/login", server.loginUser)
 
-	//add routes to router
-	// defined in account.go
-	router.POST("/accounts", server.createAccount)
-	router.GET("/accounts/:id", server.getAccount) // GET id is a URL params
-	router.GET("/accounts", server.listAccount)    // this implements pagination for fetching all accounts in a range
+	// The above routes do not need token protection
+	authRoutes := router.Group("/").Use(authMiddleWare(server.tokenMaker))
 
-	router.POST("/transfers", server.createTransfer) // this implements pagination for fetching all accounts in a range
+	//add the routes we want to protect to the router group we secured with the middleware
+	authRoutes.POST("/accounts", server.createAccount)
+	authRoutes.GET("/accounts/:id", server.getAccount) // GET id is a URL params
+	authRoutes.GET("/accounts", server.listAccount)    // this implements pagination for fetching all accounts in a range
+
+	authRoutes.POST("/transfers", server.createTransfer) // this implements pagination for fetching all accounts in a range
 
 	server.router = router
 }
