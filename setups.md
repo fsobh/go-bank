@@ -56,3 +56,7 @@ for other stuff : https://pkg.go.dev/github.com/jmoiron/sqlx
 
 NOTE : ALL GO ENV'S USE A / AND NOT A \ AS PATH SEPERATOR
 like GOBIN
+
+`docker build -t simplebank:latest .`
+
+`docker run --name simplebank -p 8080:8080 -e GIN_MODE=release -e DB_SOURCE="postgresql://root:secret@172.17.0.2:5432/simple_bank?sslmode=disable" simplebank:latest`
