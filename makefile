@@ -5,7 +5,7 @@ PORT = 5432
 DB_NAME = simple_bank
 
 createpostgres:
-	docker run --name $(IMAGE_NAME) -e POSTGRES_USER=$(USER) -e POSTGRES_PASSWORD=$(PASSWORD) -p $(PORT):$(PORT) -d postgres
+	docker run --name $(IMAGE_NAME) --network bank-network -e POSTGRES_USER=$(USER) -e POSTGRES_PASSWORD=$(PASSWORD) -p $(PORT):$(PORT) -d postgres
 
 createdb:
 	docker exec -it $(IMAGE_NAME) createdb --username=$(USER) --owner=$(USER) $(DB_NAME)
