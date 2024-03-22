@@ -15,4 +15,5 @@ services:
     environment: #this overwrites anything in the app.env
       - DB_SOURCE=postgresql://root:secret@postgres:5432/simple_bank?sslmode=disable # "...@postgres:5432..." this is done, so it uses whatever IP the postgres service is assigned instead of manually specifying it
     depends_on:
-      - postgres
+      - postgres # Tell composer that api service depends on postgres db service above. This ensures that the postgres service starts and is in the Ready state before the api service starts.
+                 # Before Compose V2, you had to use a tool called "wait-for" to wait for a service to be in the ready state. Compose +V2 takes care of this for us now
